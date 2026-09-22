@@ -8,6 +8,7 @@ import com.project.lovable.entity.ProjectMember;
 import com.project.lovable.entity.ProjectMemberId;
 import com.project.lovable.entity.User;
 import com.project.lovable.enums.ProjectRole;
+import com.project.lovable.error.BadRequestException;
 import com.project.lovable.error.ResourceNotFoundException;
 import com.project.lovable.mapper.ProjectMapper;
 import com.project.lovable.repository.ProjectMemberRepository;
@@ -15,6 +16,8 @@ import com.project.lovable.repository.ProjectRepository;
 import com.project.lovable.repository.UserRepository;
 import com.project.lovable.security.AuthUtil;
 import com.project.lovable.service.ProjectService;
+import com.project.lovable.service.ProjectTemplateService;
+import com.project.lovable.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -31,9 +34,17 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectMemberRepository projectMemberRepository;
     private final AuthUtil authUtil;
+    private final SubscriptionService subscriptionService;
+    private final ProjectTemplateService projectTemplateService;
+
 
     @Override
     public ProjectResponse createProject(ProjectRequest request) {
+
+        if (!subscriptionService.canCreateNewProject()) {
+            throw new BadRequestException("User cannot create a New project with current Plan, Upgrade plan now.");
+        }
+
 
         Long userId = authUtil.getCurrentUserId();
 //        User owner = userRepository.findById(userId).orElseThrow(
@@ -59,6 +70,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
         projectMemberRepository.save(projectMember);
 
+        projectTemplateService.initializeProjectFromTemplate(project.getId());
+
         return projectMapper.toProjectResponse(project);
 
     }
@@ -68,20 +81,24 @@ public class ProjectServiceImpl implements ProjectService {
 
         Long userId = authUtil.getCurrentUserId();
 
-        var REDACTED = projectRepository.findAllAccessibleByUser(userId);
+        var REDACTEDWithRoles = projectRepository.findAllAccessibleByUser(userId);
 
-        return projectMapper.toListOfProjectSummaryResponse(REDACTED);
+        return REDACTEDWithRoles.stream()
+                .map(p -> projectMapper.toProjectSummaryResponse(p.getProject(), p.getRole()))
+                .toList();
     }
 
     @Override
     @PreAuthorize("@security.canViewProject(#projectId)")
-    public ProjectResponse getUserProjectById(Long id) {
+    public ProjectSummaryResponse getUserProjectById(Long projectId) {
 
         Long userId = authUtil.getCurrentUserId();
 
-        Project project = getAccessibleProjectById(id, userId);
+        var projectWithRole = projectRepository.findAccessibleProjectByIdWithRole(projectId, userId)
+                .orElseThrow(() -> new BadRequestException("Project Not Found"));
 
-        return projectMapper.toProjectResponse(project);
+        return projectMapper.toProjectSummaryResponse(projectWithRole.getProject(), projectWithRole.getRole());
+
 
     }
 
@@ -113,6 +130,6 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private Project getAccessibleProjectById(Long projectId, Long userId) {
-        return projectRepository.findAccessibleProjectById(projectId, userId).orElseThrow(()-> new ResourceNotFoundException("Project",projectId.toString()));
+        return projectRepository.findAccessibleProjectById(projectId, userId).orElseThrow(() -> new ResourceNotFoundException("Project", projectId.toString()));
     }
 }

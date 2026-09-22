@@ -7,7 +7,7 @@ import com.project.lovable.dto.project.ProjectSummaryResponse;
 import java.util.List;
 
 public interface ProjectService {
-    ProjectResponse getUserProjectById(Long id);
+    ProjectSummaryResponse getUserProjectById(Long id);
 
     List<ProjectSummaryResponse> getUserProjects();
 

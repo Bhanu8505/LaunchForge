@@ -13,6 +13,40 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  data:
+    redis:
+      host: REDACTED
+      port: REDACTED
+  ai:
+***REMOVED***
+***REMOVED***
+    #      base-url: https://openrouter.ai/api/v1
+    openai:
+      api-key: AIzaSyB3qQ_wOdu4vCNhBfwOX6DM5QoSozr2MHw
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai/
+      timeout: 10m
+      chat:
+        options:
+          model: gemini-3.5-flash-lite
+          temperature: 0.0
 
 jwt:
   secret-Key: REDACTED
+
+stripe:
+  api:
+    secret: REDACTED
+  webhook:
+    secret: REDACTED
+client.url: http://REDACTED:8080
+
+minio:
+  url: REDACTED         # or minio:9000 if inside docker network
+  access-key: REDACTED
+  secret-key: REDACTED
+  project-bucket: REDACTED
+
+logging:
+  level:
+    org.springframework.ai:
+      chat.client: DEBUG

@@ -1,28 +1,41 @@
 package com.project.lovable.entity;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Entity
+@Table(name="project_files")
 public class ProjectFile {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @ManyToOne
+    @JoinColumn(name="project_id", nullable = false)
     Project project;
 
+    @Column(nullable = false)
     String path;
-    String miniObjectKey;
 
-    User createdBy;
-    User updatedBy;
+    String minioObjectKey;
 
+    @CreationTimestamp
     Instant createdAt;
+
+    @UpdateTimestamp
     Instant updatedAt;
 
 }

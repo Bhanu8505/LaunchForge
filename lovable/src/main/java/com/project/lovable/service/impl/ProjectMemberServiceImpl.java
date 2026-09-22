@@ -37,10 +37,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     @PreAuthorize("@security.canViewMembers(#projectId)")
     public List<MemberResponse> getProjectMembers(Long projectId) {
 
-        Long userId = authUtil.getCurrentUserId();
-
-        Project project = getAccessibleProjectById(projectId, userId);
-
         return projectMemberRepository.findByIdProjectId(projectId).stream()
                 .map(
                         projectMember -> projectMemberMapper.toProjectMemberResponseFromMember(projectMember)
@@ -62,7 +58,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new RuntimeException("Cannot invite yourself");
         }
 
-        ProjectMemberId projectMemberId = new ProjectMemberId(projectId, userId);
+        ProjectMemberId projectMemberId = new ProjectMemberId(projectId, invitee.getId());
         if (projectMemberRepository.existsById(projectMemberId)) {
             throw new RuntimeException("Cannot invite again");
         }
@@ -74,6 +70,8 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .projectRole(request.role())
                 .invitedAt(Instant.now())
                 .build();
+
+        projectMemberRepository.save(member);
 
         return projectMemberMapper.toProjectMemberResponseFromMember(member);
 
