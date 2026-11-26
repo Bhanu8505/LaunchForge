@@ -35,16 +35,27 @@ spec:
           ports:
             - containerPort: 5173
           resources:
+            requests:
+              memory: "128Mi"
             limits:
-              memory: "1Gi" # Prevent one user from crashing the node
+              memory: "768Mi" # Prevent one user from crashing the node
 
         # 2. THE SYNCER (File Sync)
         - name: syncer
-          image: quay.io/minio/mc
+          image:  amazon/aws-cli:latest
           command: ["/bin/sh", "-c", "sleep infinity"]
           env:
-            - name: MC_HOST_myminio
-              value: "http://REDACTED:REDACTED@minio-service:9000"
+            - name: AWS_ACCESS_KEY_ID
+              value: "minioadmin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minioadmin123"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
           volumeMounts:
             - name: workspace
               mountPath: /app
+          resources:
+            requests:
+              memory: "64Mi"
+            limits:
+              memory: "256Mi"

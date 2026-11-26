@@ -52,8 +52,13 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         Pod pod = client.pods().inNamespace(NAMESPACE)
                 .withLabel(POOL_LABEL, IDLE)
                 .list().getItems().stream()
+                .filter(p -> "Running".equals(p.getStatus().getPhase()))
+                .filter(p -> p.getStatus().getContainerStatuses() != null
+                        && p.getStatus().getContainerStatuses().stream()
+                        .allMatch(status -> Boolean.TRUE.equals(status.getReady())))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No idle runners available. Please scale up the runner-pool."));
+                .orElseThrow(() -> new RuntimeException(
+                        "No ready idle runners available. Please scale up the runner-pool."));
 
         String podName = pod.getMetadata().getName();
         log.info("Claiming pod {} for project {}", podName, projectId);
@@ -67,16 +72,26 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         try {
             // Syncer Commands
             String initialSyncCmd = String.format(
-                    "mc mirror --overwrite myminio/REDACTED/%d/ /app/",
+                    "aws --endpoint-url http://minio-service:9000 s3 sync s3://projects/%d/ /app/",
                     projectId);
 
             log.info("Starting initial sync for project {} in pod {}", projectId, podName);
             execCommand(podName, SYNCER_CONTAINER, "sh", "-c", initialSyncCmd);
 
             String watchCmd = String.format(
-                    "nohup mc mirror --overwrite --watch myminio/REDACTED/%d/ /app/ > /app/sync.log 2>&1 &",
-                    projectId);
-            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
+                    "while true; do aws --endpoint-url http://minio-service:9000 s3 sync s3://projects/%d/ /app/ --delete >> /app/sync.log 2>&1; sleep 3; done",
+                    projectId
+            );
+
+            execCommand(
+                    podName,
+                    SYNCER_CONTAINER,
+                    "sh",
+                    "-c",
+                    "nohup sh -c 'while true; do aws --endpoint-url http://minio-service:9000 s3 sync s3://projects/"
+                            + projectId
+                            + "/ /app/ --delete >> /app/sync.log 2>&1; sleep 3; done' </dev/null >/dev/null 2>&1 &"
+            );
 
             // Runner Commands
             String startCmd = "npm install && nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";

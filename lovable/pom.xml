@@ -42,8 +42,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.REDACTEDql</groupId>
-			<artifactId>REDACTEDql</artifactId>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>

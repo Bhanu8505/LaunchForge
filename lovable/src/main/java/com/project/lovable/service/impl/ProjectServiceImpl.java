@@ -81,9 +81,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         Long userId = authUtil.getCurrentUserId();
 
-        var REDACTEDWithRoles = projectRepository.findAllAccessibleByUser(userId);
+        var projectsWithRoles = projectRepository.findAllAccessibleByUser(userId);
 
-        return REDACTEDWithRoles.stream()
+        return projectsWithRoles.stream()
                 .map(p -> projectMapper.toProjectSummaryResponse(p.getProject(), p.getRole()))
                 .toList();
     }

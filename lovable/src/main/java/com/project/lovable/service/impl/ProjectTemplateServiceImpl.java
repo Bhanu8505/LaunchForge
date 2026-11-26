@@ -25,8 +25,8 @@ public class ProjectTemplateServiceImpl implements ProjectTemplateService {
     private final ProjectFileRepository projectFileRepository;
     private final ProjectRepository projectRepository;
 
-    private static final String TEMPLATE_BUCKET = "starter-REDACTED";
-    private static final String TARGET_BUCKET = "REDACTED";
+    private static final String TEMPLATE_BUCKET = "starter-projects";
+    private static final String TARGET_BUCKET = "projects";
     private static final String TEMPLATE_NAME = "react-vite-tailwind-daisyui-starter";
 
 
@@ -44,7 +44,7 @@ public class ProjectTemplateServiceImpl implements ProjectTemplateService {
                             .build()
             );
 
-            List<ProjectFile> filesToSave = new ArrayList<>(); // for metadata in REDACTED db
+            List<ProjectFile> filesToSave = new ArrayList<>(); // for metadata in postgres db
 
             for (Result<Item> result : results) {
                 Item item = result.get();

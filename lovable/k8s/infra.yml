@@ -39,7 +39,7 @@ spec:
         - name: redis
           image: redis:7-alpine
           ports:
-            - containerPort: REDACTED
+            - containerPort: 6379
           resources:
             requests:
               cpu: "50m"
@@ -60,6 +60,6 @@ spec:
     app: redis
   ports:
     - protocol: TCP
-      port: REDACTED
-      targetPort: REDACTED
+      port: 6379
+      targetPort: 6379
   type: ClusterIP

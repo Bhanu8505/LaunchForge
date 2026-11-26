@@ -10,20 +10,22 @@ import com.project.lovable.mapper.ProjectFileMapper;
 import com.project.lovable.repository.ProjectFileRepository;
 import com.project.lovable.repository.ProjectRepository;
 import com.project.lovable.service.ProjectFileService;
-import io.minio.GetObjectArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
+import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +39,7 @@ public class ProjectFileServiceImpl implements ProjectFileService {
     @Value("${minio.project-bucket}")
     private String projectBucket;
 
-    private static final String BUCKET_NAME = "REDACTED";
+    private static final String BUCKET_NAME = "projects";
 
     @Override
     public FileTreeResponse getFileTree(Long projectId) {
@@ -102,6 +104,52 @@ public class ProjectFileServiceImpl implements ProjectFileService {
             throw new RuntimeException("File save failed", e);
         }
 
+    }
+
+    @Override
+    public byte[] downloadProjectZip(Long projectId) {
+        String prefix = projectId + "/";
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(baos)) {
+
+            Iterable<Result<Item>> results = minioClient.listObjects(
+                    ListObjectsArgs.builder()
+                            .bucket(projectBucket)
+                            .prefix(prefix)
+                            .recursive(true)
+                            .build()
+            );
+
+            for (Result<Item> result : results) {
+                Item item = result.get();
+
+                if (item.isDir()) {
+                    continue;
+                }
+
+                String objectKey = item.objectName();
+                String relativePath = objectKey.substring(prefix.length());
+
+                try (InputStream inputStream = minioClient.getObject(
+                        GetObjectArgs.builder()
+                                .bucket(projectBucket)
+                                .object(objectKey)
+                                .build())) {
+
+                    zos.putNextEntry(new ZipEntry(relativePath));
+                    inputStream.transferTo(zos);
+                    zos.closeEntry();
+                }
+            }
+
+            zos.finish();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Failed to create ZIP for project {}", projectId, e);
+            throw new RuntimeException("Failed to download project", e);
+        }
     }
 
     private String determineContentType(String path) {

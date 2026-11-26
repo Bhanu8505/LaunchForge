@@ -24,7 +24,7 @@ spec:
           env:
             - name: REDIS_URL
               # Refers to the service in the same namespace
-              value: "redis://redis-service:REDACTED"
+              value: "redis://redis-service:6379"
           ports:
             - containerPort: 80
 

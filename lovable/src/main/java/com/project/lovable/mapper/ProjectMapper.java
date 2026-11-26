@@ -16,6 +16,6 @@ public interface ProjectMapper {
 
     ProjectSummaryResponse toProjectSummaryResponse(Project project, ProjectRole role);
 
-    List<ProjectSummaryResponse> toListOfProjectSummaryResponse(List<Project> REDACTED);
+    List<ProjectSummaryResponse> toListOfProjectSummaryResponse(List<Project> projects);
 
 }

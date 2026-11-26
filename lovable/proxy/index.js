@@ -2,7 +2,7 @@ const http = require("http");
 const httpProxy = require("http-proxy");
 const Redis = require("ioredis");
 
-const redisUrl = process.env.REDIS_URL || "redis://redis-service:REDACTED";
+const redisUrl = process.env.REDIS_URL || "redis://redis-service:6379";
 
 const redis = new Redis(redisUrl, {
   maxRetriesPerRequest: null,
